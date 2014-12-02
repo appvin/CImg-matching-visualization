@@ -119,10 +119,10 @@ void drawMatching(
     unsigned char colorPt0[] = {255, 0, 0};
     unsigned char colorPt1[] = {0, 255, 0};
     unsigned char colorLine[] = {0, 0, 255};
-    unsigned char colorFG[] = {255, 255, 255};
-    unsigned char colorBG[] = {0, 0, 0};
+    unsigned char colorBG[] = {255, 255, 255};
+    unsigned char colorFG[] = {0, 0, 0};
     int x0, y0, x1, y1;
-    for(int m = 0; m <= numPointDraw; ++m)
+    for(int m = 0; m < numPointDraw; ++m)
     {
         x0 = ptX[0][m];
         y0 = ptY[0][m];
@@ -134,7 +134,14 @@ void drawMatching(
     }
 
     std::stringstream ss;
-    ss << numPointDraw+1 << "/" << numPoint << ": Energy = " << energy[numPointDraw];
+    if(numPointDraw!=0)
+    {
+        ss << numPointDraw << "/" << numPoint << " points: Energy = " << energy[numPointDraw-1];
+    }
+    else
+    {
+        ss << numPointDraw << "/" << numPoint << " points: Energy = 0.0";
+    }
     img.draw_text(0, 0, ss.str().c_str(), colorFG, colorBG, 1, 25);
 }
 
@@ -206,6 +213,8 @@ int main(int argc, char* argv[])
     drawMatching(imgShow, ptX, ptY, width[0], energy, numPoint, numPointCur);
 
     cimg_library::CImgDisplay disp(imgShow, "Matching result");
+    int dispSizeWidth = disp.width();
+    int dispSizeHeight = disp.height();
     while(!disp.is_closed() && !disp.key())
     {
         // check any user input
@@ -217,6 +226,7 @@ int main(int argc, char* argv[])
             disp.set_wheel();
             dispUpdate = true;
         }
+
         if(disp.is_keyARROWDOWN() || disp.is_keyARROWLEFT())
         {
             --numPointCur;
@@ -227,11 +237,23 @@ int main(int argc, char* argv[])
             ++numPointCur;
             dispUpdate = true;
         }
+        if(disp.is_keyF())
+        {
+            if(disp.is_fullscreen())
+            {
+                disp.resize(dispSizeWidth,dispSizeHeight);
+            }
+            else
+            {
+                disp.resize(disp.screen_width(),disp.screen_height());
+            }
+            disp.toggle_fullscreen();
+        }
 
         // update the image
         if(dispUpdate)
         {
-            numPointCur = std::min(numPoint-1,numPointCur);
+            numPointCur = std::min(numPoint,numPointCur);
             numPointCur = std::max(numPointCur, 0);
             if(numPointCur != numPointPrev)
             {
