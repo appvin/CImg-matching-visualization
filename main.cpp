@@ -215,6 +215,12 @@ int main(int argc, char* argv[])
     cimg_library::CImgDisplay disp(imgShow, "Matching result");
     int dispSizeWidth = disp.width();
     int dispSizeHeight = disp.height();
+    int screenSizeWidth = disp.screen_width();
+    int screenSizeHeight = disp.screen_height();
+    float scaleWidth = screenSizeWidth/(float)dispSizeWidth;
+    float scaleHeight = screenSizeHeight/(float)dispSizeHeight;
+    int dispSizeWidthMax = dispSizeWidth*std::min(scaleWidth,scaleHeight);
+    int dispSizeHeightMax = dispSizeHeight*std::min(scaleWidth,scaleHeight);
     while(!disp.is_closed() && !disp.key())
     {
         // check any user input
@@ -245,7 +251,8 @@ int main(int argc, char* argv[])
             }
             else
             {
-                disp.resize(disp.screen_width(),disp.screen_height());
+//                disp.resize(disp.screen_width(),disp.screen_height());
+                disp.resize(dispSizeWidthMax, dispSizeHeightMax);
             }
             disp.toggle_fullscreen();
         }
