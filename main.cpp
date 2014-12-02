@@ -221,7 +221,8 @@ int main(int argc, char* argv[])
     float scaleHeight = screenSizeHeight/(float)dispSizeHeight;
     int dispSizeWidthMax = dispSizeWidth*std::min(scaleWidth,scaleHeight);
     int dispSizeHeightMax = dispSizeHeight*std::min(scaleWidth,scaleHeight);
-    while(!disp.is_closed() && !disp.key())
+
+    while(!disp.is_closed())
     {
         // check any user input
         disp.wait();
@@ -251,10 +252,13 @@ int main(int argc, char* argv[])
             }
             else
             {
-//                disp.resize(disp.screen_width(),disp.screen_height());
                 disp.resize(dispSizeWidthMax, dispSizeHeightMax);
             }
             disp.toggle_fullscreen();
+        }
+        if(disp.is_keyQ() || disp.is_keyESC())
+        {
+            disp.close();
         }
 
         // update the image
