@@ -6,9 +6,9 @@
 
 #include <CImg.h>
 
-#include "cimgConvertColor.hpp"
-#include "cimgDrawLineThick.hpp"
-
+//#include "cimgConvertColor.hpp"
+//#include "cimgDrawLineThick.hpp"
+#include "cimgMatchingViewer.hpp"
 
 template <typename T>
 void drawMatching(
@@ -39,17 +39,26 @@ void drawMatching(
         "The number of drawn points must be [0, numPoint]."
     );
 
-    int radius = 2;
+    int radius = 4;
+    unsigned char colorPt[] = {255, 0, 0};
     unsigned char colorPt0[] = {255, 0, 0};
     unsigned char colorPt1[] = {0, 255, 0};
     unsigned char colorLine[] = {0, 0, 255};
     unsigned char colorBG[] = {255, 255, 255};
     unsigned char colorFG[] = {0, 0, 0};
+    int x0, y0, x1, y1;
     for(int m = 0; m < numPointDraw; ++m)
     {
-        draw_line_thick(img, points0(m,0), points0(m,1), points1(m,0)+offset, points1(m,1), colorLine, radius);
-        img.draw_circle(points0(m,0), points0(m,1), radius*2, colorPt0);
-        img.draw_circle(points1(m,0)+offset, points1(m,1), radius*2, colorPt1);
+        x0 = points0(m,0);
+        y0 = points0(m,1);
+        x1 = points1(m,0)+offset;
+        y1 = points1(m,1);
+        draw_line_thick(img, x0, y0, x1, y1, colorLine, radius/2);
+//        img.draw_circle(x0, y0, radius, colorPt, 1.f, 1);
+//        img.draw_line(x1-radius/2, y1-radius/2, x1+radius/2, y1+radius/2, colorPt);
+//        img.draw_line(x1+radius/2, y1-radius/2, x1-radius/2, y1+radius/2, colorPt);
+        img.draw_circle(x0, y0, radius, colorPt, 1.f);
+        img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, colorPt);
     }
 
     std::stringstream ss;
@@ -72,18 +81,12 @@ void drawMatching(
     const std::vector< std::vector<int> > ptY,
     const int offset,
     const std::vector<double> energy,
-    const int numPoint,
     const int numPointDraw
 )
 {
     assert(
         img.spectrum() == 3 &&
         "The spectrum of the input image must be 3."
-    );
-    assert(
-        numPointDraw <= numPoint &&
-        numPointDraw >= 0 &&
-        "The number of drawn points must be [0, numPoint]."
     );
     assert(
         ptX.size() == 2 &&
@@ -94,35 +97,30 @@ void drawMatching(
         ptX[0].size() == energy.size() &&
         "The size of point sets must be 2."
     );
+    int numPoint = ptX[0].size();
+    assert(
+        numPointDraw <= numPoint &&
+        numPointDraw >= 0 &&
+        "The number of drawn points must be [0, numPoint]."
+    );
 
-    int radius = 2;
-    unsigned char colorPt0[] = {255, 0, 0};
-    unsigned char colorPt1[] = {0, 255, 0};
-    unsigned char colorLine[] = {0, 0, 255};
-    unsigned char colorBG[] = {255, 255, 255};
-    unsigned char colorFG[] = {0, 0, 0};
-    cimg_library::CImg<int> points(2,2);
-    for(int m = 0; m < numPointDraw; ++m)
+    cimg_library::CImg<int> points0(numPoint, 2);
+    cimg_library::CImg<int> points1(numPoint, 2);
+    for(int m = 0; m < numPoint; ++m)
     {
-        points(0,0) = ptX[0][m];
-        points(0,1) = ptY[0][m];
-        points(1,0) = ptX[1][m]+offset;
-        points(1,1) = ptY[1][m];
-        draw_line_thick(img, points, colorLine, radius);
-        img.draw_circle(points(0,0), points(0,1), radius, colorPt0);
-        img.draw_circle(points(1,0), points(1,1), radius, colorPt1);
+        points0(m,0) = ptX[0][m];
+        points0(m,1) = ptY[0][m];
+        points1(m,0) = ptX[1][m];
+        points1(m,1) = ptY[1][m];
     }
-
-    std::stringstream ss;
-    if(numPointDraw!=0)
-    {
-        ss << numPointDraw << "/" << numPoint << " points: Energy = " << energy[numPointDraw-1];
-    }
-    else
-    {
-        ss << numPointDraw << "/" << numPoint << " points: Energy = 0.0";
-    }
-    img.draw_text(0, 0, ss.str().c_str(), colorFG, colorBG, 1, 25);
+    drawMatching(
+        img,
+        points0,
+        points1,
+        offset,
+        energy,
+        numPointDraw
+    );
 }
 
 int main(int argc, char* argv[])
@@ -264,6 +262,13 @@ int main(int argc, char* argv[])
             }
         }
     }
+
+    MatchingViewer<unsigned char, int> view;
+    view.alpha(0.5);
+    view.imgs(listImg(0), listImg(1));
+    view.imgAlign().display("Align");
+    view.imgMerge().display("Merge");
+    view.pts(points0, points1);
 
     return 0;
 }

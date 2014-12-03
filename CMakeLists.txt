@@ -50,6 +50,7 @@ include_directories(${CImg_INCLUDE_DIRS})
 add_executable(${PROJ_NAME}
     cimgConvertColor.hpp
     cimgDrawLineThick.hpp
+    cimgMatchingViewer.hpp
 	main.cpp
 )
 target_link_libraries(${PROJ_NAME}
