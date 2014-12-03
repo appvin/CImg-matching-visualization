@@ -6,8 +6,6 @@
 
 #include <CImg.h>
 
-//#include "cimgConvertColor.hpp"
-//#include "cimgDrawLineThick.hpp"
 #include "cimgMatchingViewer.hpp"
 
 template <typename T>
