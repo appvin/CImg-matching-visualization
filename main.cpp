@@ -121,6 +121,77 @@ void drawMatching(
     );
 }
 
+template <typename T>
+void drawMatching(
+    cimg_library::CImg<T>& img,
+    const cimg_library::CImg<int>& points0,
+    const cimg_library::CImg<int>& points1,
+    const cimg_library::CImg<int>& correspondences,
+    const std::vector<double> energy,
+    const int offset,
+    const int numCorrespondencesDraw
+)
+{
+    assert(
+        img.spectrum() == 3 &&
+        "The spectrum of the input image must be 3."
+    );
+    assert(
+        points0.height() == 2 &&
+        points1.height() == 2 &&
+        "The dimensionality of the point sets must be 2."
+    );
+    assert(
+        correspondences.width() == energy.size() &&
+        numCorrespondencesDraw <= correspondences.width() &&
+        "Each point-to-point correspondences must be assigned its energy."
+    );
+    int numCorrespondences = correspondences.width();
+
+    int radius = 4;
+    unsigned char colorPt[] = {255, 0, 0};
+    unsigned char colorLine[] = {0, 0, 255};
+    unsigned char colorBG[] = {255, 255, 255};
+    unsigned char colorFG[] = {0, 0, 0};
+    int x0, y0, x1, y1;
+    int i0, i1;
+    for(int m = 0; m <= numCorrespondencesDraw; ++m)
+    {
+        i0 = correspondences(m,0);
+        i1 = correspondences(m,1);
+        if(i0>=0 && i0<points0.width() && i1>=0 && i1<points1.width())
+        {
+            x0 = points0(i0,0);
+            y0 = points0(i0,1);
+            x1 = points1(i1,0)+offset;
+            y1 = points1(i1,1);
+            draw_line_thick(img, x0, y0, x1, y1, colorLine, radius/2);
+    //        img.draw_circle(x0, y0, radius, colorPt, 1.f, 1);
+    //        img.draw_line(x1-radius/2, y1-radius/2, x1+radius/2, y1+radius/2, colorPt);
+    //        img.draw_line(x1+radius/2, y1-radius/2, x1-radius/2, y1+radius/2, colorPt);
+            img.draw_circle(x0, y0, radius, colorPt, 1.f);
+            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, colorPt);
+        }
+    }
+
+    int c0, c1;
+    std::stringstream ss;
+    ss << "correspondence#";
+    if(numCorrespondencesDraw>=0)
+    {
+        c0 = correspondences(numCorrespondencesDraw,0);
+        c1 = correspondences(numCorrespondencesDraw,1);
+        ss << numCorrespondencesDraw << " = (";
+        if(c0>=0)   ss << "p" << c0;
+        else        ss << "-";
+        ss << ",";
+        if(c1>=0)   ss << "q" << c1;
+        else        ss << "-";
+        ss << ") = " << energy[numCorrespondencesDraw];
+    }
+    img.draw_text(0, 0, ss.str().c_str(), colorFG, colorBG, 1, 25);
+}
+
 int main(int argc, char* argv[])
 {
     typedef unsigned char T;
@@ -164,13 +235,10 @@ int main(int argc, char* argv[])
         height.push_back( images(n).height() );
     }
 
-    /// synthesize a set of corresponding points
+    /// synthesize a set of points on the images
     std::uniform_int_distribution<> randNumPoint(5, 20);
     std::vector<int> numPoints(2);
     cimg_library::CImgList<int> points(2);
-    int numPoint = 10;
-    cimg_library::CImg<int> points0(numPoint, 2);
-    cimg_library::CImg<int> points1(numPoint, 2);
     for(int n = 0; n < numImage; ++n)
     {
         numPoints[n] = randNumPoint(mt);
@@ -181,20 +249,10 @@ int main(int argc, char* argv[])
         {
             points(n)(m,0) = randX(mt);
             points(n)(m,1) = randY(mt);
-//            if(n==0)
-//            {
-//                points0(m,0) = randX(mt);
-//                points0(m,1) = randY(mt);
-//            }
-//            else
-//            {
-//                points1(m,0) = randX(mt);
-//                points1(m,1) = randY(mt);
-//            }
-//            if(n==0)    energy[m] = randE(mt);
         }
     }
 
+    /// set point-to-point correspondences
     int numCorrespondences = numPoints[0];
     cimg_library::CImg<int> correspondences(numCorrespondences, 2);
     std::vector<double> energy(numCorrespondences);
@@ -207,28 +265,9 @@ int main(int argc, char* argv[])
         energy[m] = randE(mt);
     }
 
-    for(int n = 0; n < numImage; ++n)
-    {
-        for(int m = 0; m < numPoints[n]; ++m)
-        {
-            std::cout << "pt[" << n << "][" << m << "] = (";
-            std::cout << points(n)(m,0) << ",";
-            std::cout << points(n)(m,1) << ")" << std::endl;
-        }
-    }
-    for(int m = 0; m < numCorrespondences; ++m)
-    {
-        std::cout << "correspondence[" << m << "] = (";
-        std::cout << correspondences(m,0) << ",";
-        std::cout << correspondences(m,1) << ") = ";
-        std::cout << energy[m] << std::endl;
-    }
-
     MatchingViewer<unsigned char, int> view;
     view.alpha(0.5);
     view.images(images(0), images(1));
-    view.imgAlign().display("Align");
-    view.imgMerge().display("Merge");
     view.points(points(0), points(1));
     view.correspondences(correspondences);
 
@@ -240,13 +279,24 @@ int main(int argc, char* argv[])
             std::cout << view.point(n)(m,0) << "," << view.point(n)(m,1) << ")" << std::endl;
         }
     }
-    exit(1);
+    for(int c = 0; c < view.numberOfCorrespondences(); ++c)
+    {
+        int c0 = view.correspondences()(c,0);
+        int c1 = view.correspondences()(c,1);
+        std::cout << "correspondence[" << c << "] = (";
+        if(c0>=0)   std::cout << "p" << c0;
+        else        std::cout << "-";
+        std::cout << ",";
+        if(c1>=0)   std::cout << "q" << c1;
+        else        std::cout << "-";
+        std::cout << ") = " << energy[c] << std::endl;
+    }
     /// draw the set of corresponding points
     bool dispUpdate = false;
     int numPointCur = 0, numPointPrev;
-    cimg_library::CImg<T> imgMatch( images.get_append('x') );
+    cimg_library::CImg<T> imgMatch( view.imgAlign() );
     cimg_library::CImg<T> imgShow(imgMatch);
-    drawMatching(imgShow, points0, points1, width[0], energy, numPointCur);
+    drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
 
     cimg_library::CImgDisplay disp(imgShow, "Matching result");
     int dispSizeWidth = disp.width();
@@ -300,12 +350,12 @@ int main(int argc, char* argv[])
         // update the image
         if(dispUpdate)
         {
-            numPointCur = std::min(numPoint,numPointCur);
-            numPointCur = std::max(numPointCur, 0);
+            numPointCur = std::min(numCorrespondences-1,numPointCur);
+            numPointCur = std::max(numPointCur, -1);
             if(numPointCur != numPointPrev)
             {
                 imgShow = imgMatch;
-                drawMatching(imgShow, points0, points1, width[0], energy, numPointCur);
+                drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
                 imgShow.display(disp);
                 dispUpdate = false;
                 numPointPrev = numPointCur;

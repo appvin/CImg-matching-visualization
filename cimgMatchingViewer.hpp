@@ -98,6 +98,8 @@ public:
 private:
     cimg_library::CImg<int> _correspondences; //!< A set of point-to-point correspondences.
 public:
+    //! returns the number of point-to-point correspondences.
+    int numberOfCorrespondences(void) const {return _correspondences.width();}
     //! returns the set of point-to-point correspondences.
     cimg_library::CImg<int> correspondences(void) const {return _correspondences;}
     //! sets the set of point-to-point correspondences.
