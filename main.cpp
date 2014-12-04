@@ -124,10 +124,13 @@ void drawMatching(
 int main(int argc, char* argv[])
 {
     typedef unsigned char T;
+    std::random_device rnd;
+    std::mt19937 mt(rnd());
+
     std::cout << "run CImg matching result viewer..." << std::endl;
     std::vector<std::string> strFileInput;
     std::vector<int> width, height;
-    cimg_library::CImgList<T> listImg;
+    cimg_library::CImgList<T> images;
 
     /// set input images
     int numImage = 2;
@@ -150,49 +153,98 @@ int main(int argc, char* argv[])
         cimg_library::CImg<T> _img(it->c_str());
         if(_img.spectrum() == 3)
         {
-            listImg.insert( getGrayscaledRGB( _img ) );
+            images.insert( getGrayscaledRGB( _img ) );
         }
         else
         {
-            listImg.insert( getGraytoRGB( _img ) );
+            images.insert( getGraytoRGB( _img ) );
         }
 
-        width.push_back( listImg(n).width() );
-        height.push_back( listImg(n).height() );
+        width.push_back( images(n).width() );
+        height.push_back( images(n).height() );
     }
 
     /// synthesize a set of corresponding points
+    std::uniform_int_distribution<> randNumPoint(5, 20);
+    std::vector<int> numPoints(2);
+    cimg_library::CImgList<int> points(2);
     int numPoint = 10;
     cimg_library::CImg<int> points0(numPoint, 2);
     cimg_library::CImg<int> points1(numPoint, 2);
-    std::vector<double> energy(numPoint);
-    std::random_device rnd;
-    std::mt19937 mt(rnd());
-    std::uniform_real_distribution<> randE(0.0, 1.0);
     for(int n = 0; n < numImage; ++n)
     {
+        numPoints[n] = randNumPoint(mt);
+        points(n) = cimg_library::CImg<int>(numPoints[n], 2);
         std::uniform_int_distribution<> randX(0, width[n]-1);
         std::uniform_int_distribution<> randY(0, height[n]-1);
-        for(int m = 0; m < numPoint; ++m)
+        for(int m = 0; m < numPoints[n]; ++m)
         {
-            if(n==0)
-            {
-                points0(m,0) = randX(mt);
-                points0(m,1) = randY(mt);
-            }
-            else
-            {
-                points1(m,0) = randX(mt);
-                points1(m,1) = randY(mt);
-            }
-            if(n==0)    energy[m] = randE(mt);
+            points(n)(m,0) = randX(mt);
+            points(n)(m,1) = randY(mt);
+//            if(n==0)
+//            {
+//                points0(m,0) = randX(mt);
+//                points0(m,1) = randY(mt);
+//            }
+//            else
+//            {
+//                points1(m,0) = randX(mt);
+//                points1(m,1) = randY(mt);
+//            }
+//            if(n==0)    energy[m] = randE(mt);
         }
     }
 
+    int numCorrespondences = numPoints[0];
+    cimg_library::CImg<int> correspondences(numCorrespondences, 2);
+    std::vector<double> energy(numCorrespondences);
+    std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
+    std::uniform_real_distribution<> randE(0.0, 1.0);
+    for(int m = 0; m < numCorrespondences; ++m)
+    {
+        correspondences(m,0) = m;
+        correspondences(m,1) = rand1(mt);
+        energy[m] = randE(mt);
+    }
+
+    for(int n = 0; n < numImage; ++n)
+    {
+        for(int m = 0; m < numPoints[n]; ++m)
+        {
+            std::cout << "pt[" << n << "][" << m << "] = (";
+            std::cout << points(n)(m,0) << ",";
+            std::cout << points(n)(m,1) << ")" << std::endl;
+        }
+    }
+    for(int m = 0; m < numCorrespondences; ++m)
+    {
+        std::cout << "correspondence[" << m << "] = (";
+        std::cout << correspondences(m,0) << ",";
+        std::cout << correspondences(m,1) << ") = ";
+        std::cout << energy[m] << std::endl;
+    }
+
+    MatchingViewer<unsigned char, int> view;
+    view.alpha(0.5);
+    view.images(images(0), images(1));
+    view.imgAlign().display("Align");
+    view.imgMerge().display("Merge");
+    view.points(points(0), points(1));
+    view.correspondences(correspondences);
+
+    for(int n = 0; n < 2; ++n)
+    {
+        for(int m = 0; m < view.numberOfPoint(n); ++m)
+        {
+            std::cout << "pt[" << n << "][" << m << "] = (";
+            std::cout << view.point(n)(m,0) << "," << view.point(n)(m,1) << ")" << std::endl;
+        }
+    }
+    exit(1);
     /// draw the set of corresponding points
     bool dispUpdate = false;
     int numPointCur = 0, numPointPrev;
-    cimg_library::CImg<T> imgMatch( listImg.get_append('x') );
+    cimg_library::CImg<T> imgMatch( images.get_append('x') );
     cimg_library::CImg<T> imgShow(imgMatch);
     drawMatching(imgShow, points0, points1, width[0], energy, numPointCur);
 
@@ -260,13 +312,6 @@ int main(int argc, char* argv[])
             }
         }
     }
-
-    MatchingViewer<unsigned char, int> view;
-    view.alpha(0.5);
-    view.imgs(listImg(0), listImg(1));
-    view.imgAlign().display("Align");
-    view.imgMerge().display("Merge");
-    view.pts(points0, points1);
 
     return 0;
 }

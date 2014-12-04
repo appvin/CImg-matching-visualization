@@ -47,24 +47,23 @@ private:
 public:
     //! sets the blending parameter.
     void alpha(double alpha = 1.0){_alpha = alpha;}
-    //! returns the width of the first image \c _imagesRaw(0).
-    int w0(void) const {return _imagesRaw(0).width();}
-    //! returns the height of the first image \c _imagesRaw(0).
-    int h0(void) const {return _imagesRaw(0).height();}
-    //! returns the width of the second image \c _imagesRaw(1).
-    int w1(void) const {return _imagesRaw(1).width();}
-    //! returns the height of the second image \c _imagesRaw(1).
-    int h1(void) const {return _imagesRaw(1).height();}
-    //! returns the first image \c _imagesRaw(0).
-    cimg_library::CImg<TI> img0(void) const {return _imagesRaw(0);}
-    //! sets the first image \c _imagesRaw(0).
-    void img0(const cimg_library::CImg<TI>& _img0){_imagesRaw(0) = _img0; imagesUpdate();}
-    //! returns the second image \c _imagesRaw(1).
-    cimg_library::CImg<TI> img1(void) const {return _imagesRaw(1);}
-    //! sets the second image \c _imagesRaw(1).
-    void img1(const cimg_library::CImg<TI>& _img1){_imagesRaw(1) = _img1; imagesUpdate();}
-    //! sets the images \c _imagesRaw(0) and \c _imagesRaw(1).
-    void imgs(const cimg_library::CImg<TI>& _img0, const cimg_library::CImg<TI>& _img1){img0(_img0); img1(_img1);}
+    //! returns the width of \c n-th image \c _imagesRaw(n).
+    int width(const int n) const {return _imagesRaw(n).width();}
+    //! returns the height of \c n-th image \c _imagesRaw(n).
+    int height(const int n) const {return _imagesRaw(n).height();}
+
+    //! returns \c n-th image \c _imagesRaw(n).
+    cimg_library::CImg<TI> image(const int n) const {return _imagesRaw(n);}
+    //! sets \c n-th image \c _imagesRaw(n).
+    void image(const int n, const cimg_library::CImg<TI>& _image){_imagesRaw(n) = _image; imagesUpdate();}
+
+    //! returns a list of the images \c _imagesRaw.
+    cimg_library::CImgList<TI> images(void) const {return _imagesRaw;}
+    //! sets a list of the images \c _imagesRaw.
+    void images(const cimg_library::CImgList<TI>& _images){_imagesRaw = _images; imagesUpdate();}
+    //! sets a list of the images \c _imagesRaw.
+    void images(const cimg_library::CImg<TI>& _image0, const cimg_library::CImg<TI>& _image1){image(0, _image0); image(1, _image1); imagesUpdate();}
+
     //! returns the aligning image \c _imagesDispRaw(0).
     cimg_library::CImg<TI> imgAlign(void) const {return _imagesDispRaw(0);}
     //! returns the merging image \c _imagesDispRaw(1).
@@ -80,19 +79,25 @@ private:
     /// _points(0): A point set on the first image.
     /// _points(1): A point set on the second image.
     cimg_library::CImgList<TP> _points;
+public:
+    //! returns the number of points of \c n-th point set \c _points(n).
+    int numberOfPoint(const int n) const {return _points(n).width();}
+    //! returns \c n-th point set \c _points(n).
+    cimg_library::CImg<TP> point(const int n) const {return _points(n);}
+    //! sets \c n-th point set \c _points(n).
+    void point(const int n, const cimg_library::CImg<TP>& point){_points(n) = point;}
+
+    //! returns a set of point sets \c _points.
+    cimg_library::CImgList<TP> points(void) const {return _points;}
+    //! sets a set of point sets \c _points.
+    void points(const cimg_library::CImgList<TP>& points){_points = points;}
+    //! sets a set of point sets \c _points.
+    void points(const cimg_library::CImg<TP>& point0, const cimg_library::CImg<TP>& point1){point(0, point0); point(1, point1);}
+
+    // point-to-point correspondences
+private:
     cimg_library::CImg<int> _correspondences; //!< A set of point-to-point correspondences.
 public:
-    //! returns the first point set \c _points(0).
-    cimg_library::CImg<TP> pt0(void) const {return _points(0);}
-    //! sets the first point set \c _points(1).
-    void pt0(cimg_library::CImg<TP>& _pt0){_points(0) = _pt0;}
-    //! returns the second point set \c _points(1).
-    cimg_library::CImg<TP> pt1(void) const {return _points(1);}
-    //! sets the second point set \c _points(1).
-    void pt1(cimg_library::CImg<TP>& _pt1){_points(1) = _pt1;}
-    //! sets the two point set \c _points(0) and \c _points(1).
-    void pts(cimg_library::CImg<TP>& _pt0, cimg_library::CImg<TP>& _pt1){pt0(_pt0); pt1(_pt1);}
-
     //! returns the set of point-to-point correspondences.
     cimg_library::CImg<int> correspondences(void) const {return _correspondences;}
     //! sets the set of point-to-point correspondences.
