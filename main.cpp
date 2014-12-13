@@ -252,24 +252,45 @@ int main(int argc, char* argv[])
         }
     }
 
-    /// set point-to-point correspondences
+//    /// set point-to-point correspondences
+//    int numCorrespondences = numPoints[0];
+//    cimg_library::CImg<int> correspondences(numCorrespondences, 2);
+//    std::vector<double> energy(numCorrespondences);
+//    std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
+//    std::uniform_real_distribution<> randE(0.0, 1.0);
+//    for(int m = 0; m < numCorrespondences; ++m)
+//    {
+//        correspondences(m,0) = m;
+//        correspondences(m,1) = rand1(mt);
+//        energy[m] = randE(mt);
+//    }
+
+    /// test MatchingViewer
+    MatchingViewer<unsigned char, int> view;
+    view.alpha(0.5);
+    view.images(strFileInput);
+    view.points(points(0), points(1));
     int numCorrespondences = numPoints[0];
     cimg_library::CImg<int> correspondences(numCorrespondences, 2);
     std::vector<double> energy(numCorrespondences);
     std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
     std::uniform_real_distribution<> randE(0.0, 1.0);
-    for(int m = 0; m < numCorrespondences; ++m)
+    int numIte = 15;
+    while(--numIte > 0)
     {
-        correspondences(m,0) = m;
-        correspondences(m,1) = rand1(mt);
-        energy[m] = randE(mt);
+        std::cout << "ite" << numIte << std::endl;
+        for(int m = 0; m < numCorrespondences; ++m)
+        {
+            correspondences(m,0) = m;
+            correspondences(m,1) = rand1(mt);
+            energy[m] = randE(mt);
+        }
+        view.correspondences(correspondences);
+        view.energy(energy);
+        view.displayUpdate();
     }
 
-    MatchingViewer<unsigned char, int> view;
-    view.alpha(0.5);
-    view.images(images(0), images(1));
-    view.points(points(0), points(1));
-    view.correspondences(correspondences);
+    exit(1);
 
     for(int n = 0; n < 2; ++n)
     {
