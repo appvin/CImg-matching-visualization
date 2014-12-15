@@ -252,19 +252,6 @@ int main(int argc, char* argv[])
         }
     }
 
-//    /// set point-to-point correspondences
-//    int numCorrespondences = numPoints[0];
-//    cimg_library::CImg<int> correspondences(numCorrespondences, 2);
-//    std::vector<double> energy(numCorrespondences);
-//    std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
-//    std::uniform_real_distribution<> randE(0.0, 1.0);
-//    for(int m = 0; m < numCorrespondences; ++m)
-//    {
-//        correspondences(m,0) = m;
-//        correspondences(m,1) = rand1(mt);
-//        energy[m] = randE(mt);
-//    }
-
     /// test MatchingViewer
     MatchingViewer<unsigned char, int> view;
     view.alpha(0.5);
@@ -274,131 +261,200 @@ int main(int argc, char* argv[])
     cimg_library::CImg<int> correspondences(numCorrespondences, 2);
     std::vector<double> energy(numCorrespondences);
     std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
+    std::uniform_int_distribution<> randFusion(-1, 1);
     std::uniform_real_distribution<> randE(0.0, 1.0);
     int numIte;
+//    numIte = 5;
+//    while(--numIte > 0)
+//    {
+//        std::cout << "ite" << numIte << std::endl;
+//        for(int m = 0; m < numCorrespondences; ++m)
+//        {
+//            correspondences(m,0) = m;
+//            correspondences(m,1) = rand1(mt);
+//            energy[m] = randE(mt);
+//        }
+//        view.displayUpdate(
+//            correspondences,
+//            energy
+//        );
+//    }
+//    numIte = 5;
+//    view.flagDebug(true);
+//    while(--numIte > 0)
+//    {
+//        std::cout << "ite" << numIte << std::endl;
+//        for(int m = 0; m < numCorrespondences; ++m)
+//        {
+//            correspondences(m,0) = m;
+//            correspondences(m,1) = rand1(mt);
+//            energy[m] = randE(mt);
+//        }
+//        view.displayUpdate(
+//            correspondences,
+//            energy
+//        );
+//    }
+//    exit(1);
+
+    MatchingViewerMoveMaking<unsigned char, int> viewmm;
+    viewmm.alpha(0.5);
+    viewmm.images(strFileInput);
+    viewmm.points(points(0), points(1));
+
+    cimg_library::CImg<int> correspondencesCurrent(numCorrespondences, 2);
+    cimg_library::CImg<int> correspondencesNew(numCorrespondences, 2);
+    cimg_library::CImg<int> correspondencesFusion(numCorrespondences, 2);
+    std::vector<double> energyCurrent(numCorrespondences);
+    std::vector<double> energyNew(numCorrespondences);
+    std::vector<double> energyFusion(numCorrespondences);
     numIte = 5;
     while(--numIte > 0)
     {
         std::cout << "ite" << numIte << std::endl;
         for(int m = 0; m < numCorrespondences; ++m)
         {
-            correspondences(m,0) = m;
-            correspondences(m,1) = rand1(mt);
-            energy[m] = randE(mt);
+            correspondencesCurrent(m,0) = m;
+            correspondencesNew(m,0) = m;
+            correspondencesFusion(m,0) = m;
+            correspondencesCurrent(m,1) = rand1(mt);
+            correspondencesNew(m,1) = rand1(mt);
+            correspondencesFusion(m,1) = randFusion(mt);
+            energyCurrent[m] = randE(mt);
+            energyNew[m] = randE(mt);
+            energyFusion[m] = randE(mt);
         }
-        view.correspondences(correspondences);
-        view.energy(energy);
-        view.displayUpdate();
+        viewmm.displayUpdate(
+            correspondencesCurrent,
+            correspondencesNew,
+            correspondencesFusion,
+            energyCurrent,
+            energyNew,
+            energyFusion
+        );
     }
     numIte = 5;
-    view.flagDebug(true);
+    viewmm.flagDebug(true);
     while(--numIte > 0)
     {
         std::cout << "ite" << numIte << std::endl;
         for(int m = 0; m < numCorrespondences; ++m)
         {
-            correspondences(m,0) = m;
-            correspondences(m,1) = rand1(mt);
-            energy[m] = randE(mt);
+            correspondencesCurrent(m,0) = m;
+            correspondencesNew(m,0) = m;
+            correspondencesFusion(m,0) = m;
+            correspondencesCurrent(m,1) = rand1(mt);
+            correspondencesNew(m,1) = rand1(mt);
+            correspondencesFusion(m,1) = randFusion(mt);
+            energyCurrent[m] = randE(mt);
+            energyNew[m] = randE(mt);
+            energyFusion[m] = randE(mt);
         }
-        view.correspondences(correspondences);
-        view.energy(energy);
-        view.displayUpdate();
-    }
-
-    exit(1);
-
-    for(int n = 0; n < 2; ++n)
-    {
-        for(int m = 0; m < view.numberOfPoint(n); ++m)
-        {
-            std::cout << "pt[" << n << "][" << m << "] = (";
-            std::cout << view.point(n)(m,0) << "," << view.point(n)(m,1) << ")" << std::endl;
-        }
-    }
-    for(int c = 0; c < view.numberOfCorrespondences(); ++c)
-    {
-        int c0 = view.correspondences()(c,0);
-        int c1 = view.correspondences()(c,1);
-        std::cout << "correspondence[" << c << "] = (";
-        if(c0>=0)   std::cout << "p" << c0;
-        else        std::cout << "-";
-        std::cout << ",";
-        if(c1>=0)   std::cout << "q" << c1;
-        else        std::cout << "-";
-        std::cout << ") = " << energy[c] << std::endl;
-    }
-    /// draw the set of corresponding points
-    bool dispUpdate = false;
-    int numPointCur = 0, numPointPrev;
-    cimg_library::CImg<T> imgMatch( view.imgAlign() );
-    cimg_library::CImg<T> imgShow(imgMatch);
-    drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
-
-    cimg_library::CImgDisplay disp(imgShow, "Matching result");
-    int dispSizeWidth = disp.width();
-    int dispSizeHeight = disp.height();
-    int screenSizeWidth = disp.screen_width();
-    int screenSizeHeight = disp.screen_height();
-    float scaleWidth = screenSizeWidth/(float)dispSizeWidth;
-    float scaleHeight = screenSizeHeight/(float)dispSizeHeight;
-    int dispSizeWidthMax = dispSizeWidth*std::min(scaleWidth,scaleHeight);
-    int dispSizeHeightMax = dispSizeHeight*std::min(scaleWidth,scaleHeight);
-
-    while(!disp.is_closed())
-    {
-        // check any user input
-        disp.wait();
-        // retrieve the input
-        if(disp.wheel()!=0)
-        {
-            numPointCur += disp.wheel();
-            disp.set_wheel();
-            dispUpdate = true;
-        }
-
-        if(disp.is_keyARROWDOWN() || disp.is_keyARROWLEFT())
-        {
-            --numPointCur;
-            dispUpdate = true;
-        }
-        if(disp.is_keyARROWUP() || disp.is_keyARROWRIGHT())
-        {
-            ++numPointCur;
-            dispUpdate = true;
-        }
-        if(disp.is_keyF())
-        {
-            if(disp.is_fullscreen())
-            {
-                disp.resize(dispSizeWidth,dispSizeHeight);
-            }
-            else
-            {
-                disp.resize(dispSizeWidthMax, dispSizeHeightMax);
-            }
-            disp.toggle_fullscreen();
-        }
-        if(disp.is_keyQ() || disp.is_keyESC())
-        {
-            disp.close();
-        }
-
-        // update the image
-        if(dispUpdate)
-        {
-            numPointCur = std::min(numCorrespondences-1,numPointCur);
-            numPointCur = std::max(numPointCur, -1);
-            if(numPointCur != numPointPrev)
-            {
-                imgShow = imgMatch;
-                drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
-                imgShow.display(disp);
-                dispUpdate = false;
-                numPointPrev = numPointCur;
-            }
-        }
+        viewmm.displayUpdate(
+            correspondencesCurrent,
+            correspondencesNew,
+            correspondencesFusion,
+            energyCurrent,
+            energyNew,
+            energyFusion
+        );
     }
 
     return 0;
+}
+
+void main2()
+{
+//    for(int n = 0; n < 2; ++n)
+//    {
+//        for(int m = 0; m < view.numberOfPoint(n); ++m)
+//        {
+//            std::cout << "pt[" << n << "][" << m << "] = (";
+//            std::cout << view.point(n)(m,0) << "," << view.point(n)(m,1) << ")" << std::endl;
+//        }
+//    }
+//    for(int c = 0; c < view.numberOfCorrespondences(); ++c)
+//    {
+//        int c0 = view.correspondences()(c,0);
+//        int c1 = view.correspondences()(c,1);
+//        std::cout << "correspondence[" << c << "] = (";
+//        if(c0>=0)   std::cout << "p" << c0;
+//        else        std::cout << "-";
+//        std::cout << ",";
+//        if(c1>=0)   std::cout << "q" << c1;
+//        else        std::cout << "-";
+//        std::cout << ") = " << energy[c] << std::endl;
+//    }
+//    /// draw the set of corresponding points
+//    bool dispUpdate = false;
+//    int numPointCur = 0, numPointPrev;
+//    cimg_library::CImg<T> imgMatch( view.imgAlign() );
+//    cimg_library::CImg<T> imgShow(imgMatch);
+//    drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
+
+//    cimg_library::CImgDisplay disp(imgShow, "Matching result");
+//    int dispSizeWidth = disp.width();
+//    int dispSizeHeight = disp.height();
+//    int screenSizeWidth = disp.screen_width();
+//    int screenSizeHeight = disp.screen_height();
+//    float scaleWidth = screenSizeWidth/(float)dispSizeWidth;
+//    float scaleHeight = screenSizeHeight/(float)dispSizeHeight;
+//    int dispSizeWidthMax = dispSizeWidth*std::min(scaleWidth,scaleHeight);
+//    int dispSizeHeightMax = dispSizeHeight*std::min(scaleWidth,scaleHeight);
+
+//    while(!disp.is_closed())
+//    {
+//        // check any user input
+//        disp.wait();
+//        // retrieve the input
+//        if(disp.wheel()!=0)
+//        {
+//            numPointCur += disp.wheel();
+//            disp.set_wheel();
+//            dispUpdate = true;
+//        }
+
+//        if(disp.is_keyARROWDOWN() || disp.is_keyARROWLEFT())
+//        {
+//            --numPointCur;
+//            dispUpdate = true;
+//        }
+//        if(disp.is_keyARROWUP() || disp.is_keyARROWRIGHT())
+//        {
+//            ++numPointCur;
+//            dispUpdate = true;
+//        }
+//        if(disp.is_keyF())
+//        {
+//            if(disp.is_fullscreen())
+//            {
+//                disp.resize(dispSizeWidth,dispSizeHeight);
+//            }
+//            else
+//            {
+//                disp.resize(dispSizeWidthMax, dispSizeHeightMax);
+//            }
+//            disp.toggle_fullscreen();
+//        }
+//        if(disp.is_keyQ() || disp.is_keyESC())
+//        {
+//            disp.close();
+//        }
+
+//        // update the image
+//        if(dispUpdate)
+//        {
+//            numPointCur = std::min(numCorrespondences-1,numPointCur);
+//            numPointCur = std::max(numPointCur, -1);
+//            if(numPointCur != numPointPrev)
+//            {
+//                imgShow = imgMatch;
+//                drawMatching(imgShow, points(0), points(1), correspondences, energy, width[0], numPointCur);
+//                imgShow.display(disp);
+//                dispUpdate = false;
+//                numPointPrev = numPointCur;
+//            }
+//        }
+//    }
+
 }

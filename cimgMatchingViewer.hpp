@@ -6,6 +6,13 @@
 #include "cimgDrawLineThick.hpp"
 #include <CImg.h>
 
+static const unsigned char _colorPt[3] = {255, 0, 0};     //!< Color for points
+static const unsigned char _colorLine[3] = {0, 0, 255};   //!< Color for lines
+static const unsigned char _colorLineCurrent[3] = {255, 0, 0};   //!< Color for lines of current correspondences
+static const unsigned char _colorLineNew[3] = {0, 0, 255};   //!< Color for lines of new correspondences
+static const unsigned char _colorTextBg[3] = {255, 255, 255};     //!< Color for background of text area
+static const unsigned char _colorTextFg[3] = {0, 0, 0};     //!< Color for foreground of text area
+
 template <typename TI, typename TP>
 class MatchingViewer
 {
@@ -24,11 +31,11 @@ public:
         _points(2),
         _flagDisplay(0),
         _alpha(1.0),
-        _flagDebug(flagDebug),
-        colorPt{255, 0, 0},
-        colorLine{0, 0, 255},
-        colorBG{255, 255, 255},
-        colorFG{0,0,0}
+        _flagDebug(flagDebug)/*,
+        _colorPt{255, 0, 0},
+        _colorLine{0, 0, 255},
+        _colorTextBg{255, 255, 255},
+        _colorTextFg{0,0,0}*/
     {}
     //! Destructor
     ~MatchingViewer(void){}
@@ -62,11 +69,13 @@ public:
 
     //! returns \c n-th image \c _imagesRaw(n).
     cimg_library::CImg<TI> image(const int n) const {return _imagesRaw(n);}
+    cimg_library::CImg<TI>& image(const int n){return _imagesRaw(n);}
     //! sets \c n-th image \c _imagesRaw(n).
     void image(const int n, const cimg_library::CImg<TI>& _image){_imagesRaw(n) = _image; imagesUpdate();}
 
     //! returns a list of the images \c _imagesRaw.
     cimg_library::CImgList<TI> images(void) const {return _imagesRaw;}
+    cimg_library::CImgList<TI>& images(void){return _imagesRaw;}
     //! sets a list of the images \c _imagesRaw.
     void images(const cimg_library::CImgList<TI>& _images){_imagesRaw = _images; imagesUpdate();}
     //! sets a list of the images \c _imagesRaw.
@@ -76,8 +85,10 @@ public:
 
     //! returns the aligning image \c _imagesDispRaw(0).
     cimg_library::CImg<TI> imgAlign(void) const {return _imagesDispRaw(0);}
+    cimg_library::CImg<TI>& imgAlign(void){return _imagesDispRaw(0);}
     //! returns the merging image \c _imagesDispRaw(1).
     cimg_library::CImg<TI> imgMerge(void) const {return _imagesDispRaw(1);}
+    cimg_library::CImg<TI>& imgMerge(void){return _imagesDispRaw(1);}
     void imagesAlign(void){_imagesDispRaw(0) = _imagesRaw.images(0,1).get_append('x');;}
     void imagesMerge(void){_imagesDispRaw(1) = _alpha*_imagesRaw(0)+(1.0-_alpha)*_imagesRaw(1);}
     void imagesUpdate(void);//{imagesAlign(); imagesMerge();}
@@ -94,11 +105,13 @@ public:
     int numberOfPoint(const int n) const {return _points(n).width();}
     //! returns \c n-th point set \c _points(n).
     cimg_library::CImg<TP> point(const int n) const {return _points(n);}
+    cimg_library::CImg<TP>& point(const int n){return _points(n);}
     //! sets \c n-th point set \c _points(n).
     void point(const int n, const cimg_library::CImg<TP>& point){_points(n) = point;}
 
     //! returns a set of point sets \c _points.
     cimg_library::CImgList<TP> points(void) const {return _points;}
+    cimg_library::CImgList<TP>& points(void){return _points;}
     //! sets a set of point sets \c _points.
     void points(const cimg_library::CImgList<TP>& points){_points = points;}
     //! sets a set of point sets \c _points.
@@ -112,6 +125,7 @@ public:
     int numberOfCorrespondences(void) const {return _correspondences.width();}
     //! returns the set of point-to-point correspondences.
     cimg_library::CImg<int> correspondences(void) const {return _correspondences;}
+    cimg_library::CImg<int>& correspondences(void){return _correspondences;}
     //! sets the set of point-to-point correspondences.
     void correspondences(const cimg_library::CImg<int>& correspondences){_correspondences = correspondences;}
 
@@ -125,30 +139,47 @@ public:
     void energy(const std::vector<double>& energy){_energy = energy;}
     //! sets a set of energy \c _energy
     std::vector<double> energy() const {return _energy;}
+    std::vector<double>& energy(){return _energy;}
 
-    // displays
-    cimg_library::CImgDisplay _dispEnergy; //!< Display for showing energy of point-to-point correspondences.
-    cimg_library::CImgDisplay _dispTrans; //!< Display for showing the transformation between two point sets.
-    int _flagDisplay; //!< The flag indicating which display is shown.
-    void flagDisplay(const int flagDisplay){_flagDisplay = flagDisplay;}
-    void displayUpdate(void);
-    cimg_library::CImg<TI> drawMatching(
-        const cimg_library::CImg<TI>& _img
-    );
-    cimg_library::CImg<TI> drawMatching(
-        const cimg_library::CImg<TI>& _img,
-        const int numDraw
-    );
 
     // variables for display
 private:
     bool _flagDebug; //!< A flag indicating debug mode
-    const unsigned char colorPt[3];     //!< Color for points
-    const unsigned char colorLine[3];   //!< Color for lines
-    const unsigned char colorBG[3];     //!< Color for background of text area
-    const unsigned char colorFG[3];     //!< Color for foreground of text area
 public:
-    void flagDebug(const bool &flagDebug){ _flagDebug = flagDebug;}
+    void flagDebug(const bool &flagDebug){_flagDebug = flagDebug;}
+    bool flagDebug(void) const {return _flagDebug;}
+
+    // displays
+private:
+    cimg_library::CImgDisplay _dispEnergy; //!< Display for showing energy of point-to-point correspondences.
+    cimg_library::CImgDisplay _dispTrans; //!< Display for showing the transformation between two point sets.
+public:
+    //! gets \c _dispEnergy
+    cimg_library::CImgDisplay dispEnergy(void) const {return _dispEnergy;}
+    cimg_library::CImgDisplay& dispEnergy(void){return _dispEnergy;}
+    //! sets \c _dispEnergy
+    void dispEnergy(const cimg_library::CImgDisplay& dispEnergy){_dispEnergy = dispEnergy;}
+
+private:
+    int _flagDisplay; //!< The flag indicating which display is shown.
+public:
+    void flagDisplay(const int flagDisplay){_flagDisplay = flagDisplay;}
+    void displayUpdate(void);
+    void displayUpdate(
+        const cimg_library::CImg<int>& correspondences,
+        const std::vector<double>& energy
+    );
+    cimg_library::CImg<TI> drawMatching(
+        const cimg_library::CImg<TI>& _img,
+        const unsigned char colorPt[] = _colorPt,
+        const unsigned char colorLine[] = _colorLine
+    );
+    cimg_library::CImg<TI> drawMatching(
+        const cimg_library::CImg<TI>& _img,
+        const int numDraw,
+            const unsigned char colorPt[] = _colorPt,
+            const unsigned char colorLine[] = _colorLine
+    );
     //@}
 };
 //------------------------------------------
@@ -223,18 +254,6 @@ void MatchingViewer<TI,TP>::displayUpdate(void)
             {
                 ++numPointCur;
             }
-//            if(_dispEnergy.is_keyF())
-//            {
-//                if(_dispEnergy.is_fullscreen())
-//                {
-//                    _dispEnergy.resize(dispSizeWidth,dispSizeHeight);
-//                }
-//                else
-//                {
-//                    _dispEnergy.resize(dispSizeWidthMax, dispSizeHeightMax);
-//                }
-//                disp.toggle_fullscreen();
-//            }
             if(_dispEnergy.is_keyQ() || _dispEnergy.is_keyESC())
             {
                 _flag = false;
@@ -242,7 +261,7 @@ void MatchingViewer<TI,TP>::displayUpdate(void)
 
             // update the image
             else
-            {
+            { // update the image
                 numPointCur = std::min(_correspondences.width()-1,numPointCur);
                 numPointCur = std::max(numPointCur, -1);
                 if(numPointCur != numPointPrev)
@@ -257,17 +276,32 @@ void MatchingViewer<TI,TP>::displayUpdate(void)
 }
 
 template <typename TI, typename TP>
-cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
-    const cimg_library::CImg<TI> &_img
+void MatchingViewer<TI,TP>::displayUpdate(
+    const cimg_library::CImg<int>& correspondences,
+    const std::vector<double>& energy
 )
 {
-    return drawMatching(_img, _correspondences.width());
+    _correspondences = correspondences;
+    _energy = energy;
+    displayUpdate();
 }
 
 template <typename TI, typename TP>
 cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
     const cimg_library::CImg<TI> &_img,
-    const int numDraw
+    const unsigned char colorPt[],
+    const unsigned char colorLine[]
+)
+{
+    return drawMatching(_img, _correspondences.width(), colorPt, colorLine);
+}
+
+template <typename TI, typename TP>
+cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
+    const cimg_library::CImg<TI> &_img,
+    const int numDraw,
+    const unsigned char colorPt[],
+    const unsigned char colorLine[]
 )
 {
     cimg_library::CImg<TI> img(_img);
@@ -285,10 +319,10 @@ cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
             y0 = _points(0)(i0,1);
             x1 = _points(1)(i1,0)+offset;
             y1 = _points(1)(i1,1);
-            draw_line_thick(img, x0, y0, x1, y1, colorLine, radius/2);
-            img.draw_circle(x0, y0, radius, colorPt, 1.f);
-            img.draw_circle(x1, y1, radius, colorPt, 1.f);
-//            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, colorPt);
+            draw_line_thick(img, x0, y0, x1, y1, _colorLine, radius/2);
+            img.draw_circle(x0, y0, radius, _colorPt, 1.f);
+            img.draw_circle(x1, y1, radius, _colorPt, 1.f);
+//            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, _colorPt);
         }
     }
 
@@ -307,10 +341,272 @@ cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
         else        ss << "-";
         ss << ") = " << _energy[numDraw];
     }
-    img.draw_text(0, 0, ss.str().c_str(), colorFG, colorBG, 1, 25);
+    img.draw_text(0, 0, ss.str().c_str(), _colorTextFg, _colorTextBg, 1, 25);
 
     return img;
 }
 
+template <typename TI, typename TP>
+class MatchingViewerMoveMaking :public MatchingViewer<TI,TP>{
+    //------------------------------------------
+    //
+    //! \name
+    //@{
+public:
+    //! Default constructor
+    MatchingViewerMoveMaking()/*:
+//        _imagesRaw(2),
+//        _imagesDispRaw(2),
+//        _imagesDisp(2),
+//        _points(2),
+//        _flagDisplay(0),
+//        _alpha(1.0),
+//        _flagDebug(flagDebug),
+//        _colorPt{255, 0, 0},
+//        _colorLineCurrent{0, 0, 255},
+//        _colorLineNew{255, 0, 0}
+//        _colorTextBg{255, 255, 255},
+//        _colorTextFg{0,0,0}*/
+    {
+    }
+    //! Destructor
+    ~MatchingViewerMoveMaking(void){}
+    //@}
+
+    // point-to-point correspondences
+private:
+    cimg_library::CImg<int> _correspondencesCurrent; //!< A current set of point-to-point correspondences.
+    cimg_library::CImg<int> _correspondencesNew; //!< A new set of point-to-point correspondences.
+    cimg_library::CImg<int> _correspondencesFusion; //!< A fused set of point-to-point correspondences.
+public:
+    //! returns the number of point-to-point correspondences.
+    int numberOfCorrespondences(void) const {return _correspondencesCurrent.width();}
+    //! returns the set of point-to-point correspondences.
+    cimg_library::CImg<int> correspondences(const int c) const {
+        if(c==0)        return _correspondencesCurrent;
+        else if(c==1)   return _correspondencesNew;
+        else            return _correspondencesFusion;
+    }
+    //! sets the set of point-to-point correspondences.
+    void correspondences(
+            const cimg_library::CImg<int>& correspondencesCurrent,
+            const cimg_library::CImg<int>& correspondencesNew,
+            const cimg_library::CImg<int>& correspondencesFusion
+    )
+    {
+        _correspondencesCurrent = correspondencesCurrent;
+        _correspondencesNew = correspondencesNew;
+        _correspondencesFusion = correspondencesFusion;
+    }
+
+    // energy
+private:
+    std::vector<double> _energyCurrent; //!< Energy for current point-to-point correspondence.
+    std::vector<double> _energyNew; //!< Energy for new point-to-point correspondence.
+    std::vector<double> _energyFusion; //!< Energy for fused point-to-point correspondence.
+public:
+    //! returns the number of point-to-point correspondences.
+    int numberOfEnergy(void) const {return _energyCurrent.size();}
+    //! sets a set of energy \c _energy
+    void energy(
+        const std::vector<double>& energyCurrent,
+        const std::vector<double>& energyNew,
+        const std::vector<double>& energyFusion
+    )
+    {
+        _energyCurrent = energyCurrent;
+        _energyNew = energyNew;
+        _energyFusion = energyFusion;
+    }
+    //! gets a set of energy \c _energy
+    std::vector<double> energy(const int e) const
+    {
+        if(e==0)        return _energyCurrent;
+        else if(e==1)   return _energyNew;
+        else            return _energyFusion;
+    }
+
+    // displays
+//    cimg_library::CImgDisplay _dispEnergy; //!< Display for showing energy of point-to-point correspondences.
+//    cimg_library::CImgDisplay _dispTrans; //!< Display for showing the transformation between two point sets.
+//    int _flagDisplay; //!< The flag indicating which display is shown.
+//    void flagDisplay(const int flagDisplay){_flagDisplay = flagDisplay;}
+    void displayUpdate(void);
+    void displayUpdate(
+        const cimg_library::CImg<int>& correspondencesCurrent,
+        const cimg_library::CImg<int>& correspondencesNew,
+        const cimg_library::CImg<int>& correspondencesFusion,
+        const std::vector<double>& energyCurrent,
+        const std::vector<double>& energyNew,
+        const std::vector<double>& energyFusion
+    );
+//    cimg_library::CImg<TI> drawMatching(
+//        const cimg_library::CImg<TI>& _img
+//    );
+//    cimg_library::CImg<TI> drawMatching(
+//        const cimg_library::CImg<TI>& _img,
+//        const int numDraw
+//    );
+
+};
+
+template <typename TI, typename TP>
+void MatchingViewerMoveMaking<TI,TP>::displayUpdate(void)
+{
+    cimg_library::CImg<TI> imgShow(MatchingViewer<TI,TP>::imgAlign());
+
+    MatchingViewer<TI,TP>::correspondences(_correspondencesCurrent);
+    MatchingViewer<TI,TP>::energy(_energyCurrent);
+    cimg_library::CImg<TI> imgCurrent = MatchingViewer<TI,TP>::drawMatching( imgShow, numberOfCorrespondences(), _colorPt, _colorLineCurrent);
+    MatchingViewer<TI,TP>::correspondences(_correspondencesNew);
+    MatchingViewer<TI,TP>::energy(_energyNew);
+    cimg_library::CImg<TI> imgNew = MatchingViewer<TI,TP>::drawMatching( imgShow, numberOfCorrespondences(), _colorPt, _colorLineNew);
+
+//    cimg_library::CImg<TI> imgShow2(imgCurrent.append(imgNew,'y'));
+//    MatchingViewer<TI,TP>::dispEnergy()
+
+    if(!MatchingViewer<TI,TP>::flagDebug())
+    { // non-debug mode
+        MatchingViewer<TI,TP>::dispEnergy().wait(300);
+        imgCurrent.append(imgNew,'y').display( MatchingViewer<TI,TP>::dispEnergy() );
+//        MatchingViewer<TI,TP>::drawMatching( imgShow ).display(MatchingViewer<TI,TP>::dispEnergy());
+    }
+    else
+    { // debug mode
+        int numPointCur = 0, numPointPrev;
+        bool _flag = true;
+//        MatchingViewer<TI,TP>::drawMatching( imgShow, numPointCur ).display(MatchingViewer<TI,TP>::dispEnergy());
+        MatchingViewer<TI,TP>::correspondences(_correspondencesCurrent);
+        MatchingViewer<TI,TP>::energy(_energyCurrent);
+        imgCurrent = MatchingViewer<TI,TP>::drawMatching( imgShow, numPointCur, _colorPt, _colorLineCurrent);
+        MatchingViewer<TI,TP>::correspondences(_correspondencesNew);
+        MatchingViewer<TI,TP>::energy(_energyNew);
+        imgNew = MatchingViewer<TI,TP>::drawMatching( imgShow, numPointCur, _colorPt, _colorLineNew);
+
+        while(_flag)
+        {
+            // check any user input
+            MatchingViewer<TI,TP>::dispEnergy().wait();
+            // retrieve the input
+            if(MatchingViewer<TI,TP>::dispEnergy().wheel()!=0)
+            {
+                numPointCur += MatchingViewer<TI,TP>::dispEnergy().wheel();
+                MatchingViewer<TI,TP>::dispEnergy().set_wheel();
+            }
+
+            if(MatchingViewer<TI,TP>::dispEnergy().is_keyARROWDOWN() || MatchingViewer<TI,TP>::dispEnergy().is_keyARROWLEFT())
+            {
+                --numPointCur;
+            }
+            if(MatchingViewer<TI,TP>::dispEnergy().is_keyARROWUP() || MatchingViewer<TI,TP>::dispEnergy().is_keyARROWRIGHT())
+            {
+                ++numPointCur;
+            }
+            if(MatchingViewer<TI,TP>::dispEnergy().is_keyQ() || MatchingViewer<TI,TP>::dispEnergy().is_keyESC())
+            {
+                _flag = false;
+            }
+
+            // update the image
+            else
+            { // update the image
+                numPointCur = std::min(MatchingViewer<TI,TP>::correspondences().width()-1,numPointCur);
+                numPointCur = std::max(numPointCur, -1);
+                if(numPointCur != numPointPrev)
+                {
+//                    imgShow = MatchingViewer<TI,TP>::imgAlign();
+//                    MatchingViewer<TI,TP>::drawMatching(imgShow, numPointCur).display( MatchingViewer<TI,TP>::dispEnergy() );
+                    MatchingViewer<TI,TP>::correspondences(_correspondencesCurrent);
+                    MatchingViewer<TI,TP>::energy(_energyCurrent);
+                    imgCurrent = MatchingViewer<TI,TP>::drawMatching( imgShow, numPointCur, _colorPt, _colorLineCurrent);
+                    MatchingViewer<TI,TP>::correspondences(_correspondencesNew);
+                    MatchingViewer<TI,TP>::energy(_energyNew);
+                    imgNew = MatchingViewer<TI,TP>::drawMatching( imgShow, numPointCur, _colorPt, _colorLineNew);
+                    imgCurrent.append(imgNew,'y').display( MatchingViewer<TI,TP>::dispEnergy() );
+                    numPointPrev = numPointCur;
+                }
+            }
+        }
+    }
+}
+
+template <typename TI, typename TP>
+void MatchingViewerMoveMaking<TI,TP>::displayUpdate(
+    const cimg_library::CImg<int>& correspondencesCurrent,
+    const cimg_library::CImg<int>& correspondencesNew,
+    const cimg_library::CImg<int>& correspondencesFusion,
+    const std::vector<double>& energyCurrent,
+    const std::vector<double>& energyNew,
+    const std::vector<double>& energyFusion
+)
+{
+    correspondences(
+        correspondencesCurrent,
+        correspondencesNew,
+        correspondencesFusion
+    );
+    energy(
+        energyCurrent,
+        energyNew,
+        energyFusion
+    );
+    displayUpdate();
+}
+
+//template <typename TI, typename TP>
+//cimg_library::CImg<TI> MatchingViewerMoveMaking<TI,TP>::drawMatching(
+//    const cimg_library::CImg<TI> &_img
+//)
+//{
+//    return drawMatching(_img, _correspondences.width());
+//}
+
+//template <typename TI, typename TP>
+//cimg_library::CImg<TI> MatchingViewerMoveMaking<TI,TP>::drawMatching(
+//    const cimg_library::CImg<TI> &_img,
+//    const int numDraw
+//)
+//{
+//    cimg_library::CImg<TI> img(_img);
+//    int offset = _imagesRaw(0).width();
+//    int radius = 4;
+//    int x0, y0, x1, y1;
+//    int i0, i1;
+//    for(int m = 0; m <= numDraw; ++m)
+//    {
+//        i0 = _correspondences(m,0);
+//        i1 = _correspondences(m,1);
+//        if(i0>=0 && i0< _points(0).width() && i1>=0 && i1<_points(1).width())
+//        {
+//            x0 = _points(0)(i0,0);
+//            y0 = _points(0)(i0,1);
+//            x1 = _points(1)(i1,0)+offset;
+//            y1 = _points(1)(i1,1);
+//            draw_line_thick(img, x0, y0, x1, y1, _colorLine, radius/2);
+//            img.draw_circle(x0, y0, radius, _colorPt, 1.f);
+//            img.draw_circle(x1, y1, radius, _colorPt, 1.f);
+////            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, _colorPt);
+//        }
+//    }
+
+//    int c0, c1;
+//    std::stringstream ss;
+//    ss << "correspondence#";
+//    if(numDraw>=0)
+//    {
+//        c0 = _correspondences(numDraw,0);
+//        c1 = _correspondences(numDraw,1);
+//        ss << numDraw << " = (";
+//        if(c0>=0)   ss << "p" << c0;
+//        else        ss << "-";
+//        ss << ",";
+//        if(c1>=0)   ss << "q" << c1;
+//        else        ss << "-";
+//        ss << ") = " << _energy[numDraw];
+//    }
+//    img.draw_text(0, 0, ss.str().c_str(), _colorTextFg, _colorTextBg, 1, 25);
+
+//    return img;
+//}
 
 #endif
