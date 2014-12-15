@@ -333,32 +333,32 @@ int main(int argc, char* argv[])
             energyFusion
         );
     }
-    numIte = 5;
-    viewmm.flagDebug(true);
-    while(--numIte > 0)
-    {
-        std::cout << "ite" << numIte << std::endl;
-        for(int m = 0; m < numCorrespondences; ++m)
-        {
-            correspondencesCurrent(m,0) = m;
-            correspondencesNew(m,0) = m;
-            correspondencesFusion(m,0) = m;
-            correspondencesCurrent(m,1) = rand1(mt);
-            correspondencesNew(m,1) = rand1(mt);
-            correspondencesFusion(m,1) = randFusion(mt);
-            energyCurrent[m] = randE(mt);
-            energyNew[m] = randE(mt);
-            energyFusion[m] = randE(mt);
-        }
-        viewmm.displayUpdate(
-            correspondencesCurrent,
-            correspondencesNew,
-            correspondencesFusion,
-            energyCurrent,
-            energyNew,
-            energyFusion
-        );
-    }
+//    numIte = 5;
+//    viewmm.flagDebug(true);
+//    while(--numIte > 0)
+//    {
+//        std::cout << "ite" << numIte << std::endl;
+//        for(int m = 0; m < numCorrespondences; ++m)
+//        {
+//            correspondencesCurrent(m,0) = m;
+//            correspondencesNew(m,0) = m;
+//            correspondencesFusion(m,0) = m;
+//            correspondencesCurrent(m,1) = rand1(mt);
+//            correspondencesNew(m,1) = rand1(mt);
+//            correspondencesFusion(m,1) = randFusion(mt);
+//            energyCurrent[m] = randE(mt);
+//            energyNew[m] = randE(mt);
+//            energyFusion[m] = randE(mt);
+//        }
+//        viewmm.displayUpdate(
+//            correspondencesCurrent,
+//            correspondencesNew,
+//            correspondencesFusion,
+//            energyCurrent,
+//            energyNew,
+//            energyFusion
+//        );
+//    }
 
     return 0;
 }
