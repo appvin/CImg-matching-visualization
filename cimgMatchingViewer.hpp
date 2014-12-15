@@ -15,13 +15,16 @@ class MatchingViewer
     //@{
 public:
     //! Default constructor
-    MatchingViewer(void):
+    MatchingViewer(
+        const bool flagDebug = false
+    ):
         _imagesRaw(2),
         _imagesDispRaw(2),
         _imagesDisp(2),
         _points(2),
         _flagDisplay(0),
         _alpha(1.0),
+        _flagDebug(flagDebug),
         colorPt{255, 0, 0},
         colorLine{0, 0, 255},
         colorBG{255, 255, 255},
@@ -129,15 +132,23 @@ public:
     int _flagDisplay; //!< The flag indicating which display is shown.
     void flagDisplay(const int flagDisplay){_flagDisplay = flagDisplay;}
     void displayUpdate(void);
-    cimg_library::CImg<TI> drawMatching(const cimg_library::CImg<TI>& _img);
+    cimg_library::CImg<TI> drawMatching(
+        const cimg_library::CImg<TI>& _img
+    );
+    cimg_library::CImg<TI> drawMatching(
+        const cimg_library::CImg<TI>& _img,
+        const int numDraw
+    );
 
     // variables for display
 private:
-
-    const unsigned char colorPt[3];
-    const unsigned char colorLine[3];
-    const unsigned char colorBG[3];
-    const unsigned char colorFG[3];
+    bool _flagDebug; //!< A flag indicating debug mode
+    const unsigned char colorPt[3];     //!< Color for points
+    const unsigned char colorLine[3];   //!< Color for lines
+    const unsigned char colorBG[3];     //!< Color for background of text area
+    const unsigned char colorFG[3];     //!< Color for foreground of text area
+public:
+    void flagDebug(const bool &flagDebug){ _flagDebug = flagDebug;}
     //@}
 };
 //------------------------------------------
@@ -181,45 +192,89 @@ void MatchingViewer<TI,TP>::images(const std::vector<std::string>& strImage)
 template <typename TI, typename TP>
 void MatchingViewer<TI,TP>::displayUpdate(void)
 {
-//    std::cout << "  1" << _dispEnergy.is_closed() << std::endl;
-//    _dispEnergy = _imagesDispRaw(0);
-////    _imagesDispRaw(0).display(_dispEnergy);
-//    std::cout << "  2" << _dispEnergy.is_closed() << std::endl;
-//    _dispEnergy.show();
-//    std::cout << "  3" << _dispEnergy.is_closed() << std::endl;
-//    while(!_dispEnergy.is_closed())
-//    {
-//        _dispEnergy.wait();
-//        if(_dispEnergy.is_keyQ() || _dispEnergy.is_keyESC())
-//        {
-//            _dispEnergy.close();
-//            std::cout << "  pushed" << std::endl;
-//        }
-//    }
-//    std::cout << "  4" << _dispEnergy.is_closed() << std::endl;
-//    _dispEnergy = _imagesDispRaw(0);
-    drawMatching(_imagesDispRaw(0)).display(_dispEnergy);
-    bool _flag = true;
-    while(_flag)
-    {
-        _dispEnergy.wait();
-        if(_dispEnergy.is_keyQ() || _dispEnergy.is_keyESC())
+    cimg_library::CImg<TI> imgShow(_imagesDispRaw(0));
+
+    if(!_flagDebug)
+    { // non-debug mode
+        _dispEnergy.wait(300);
+        drawMatching( imgShow ).display(_dispEnergy);
+    }
+    else
+    { // debug mode
+        int numPointCur = 0, numPointPrev;
+        bool _flag = true;
+        drawMatching( imgShow, numPointCur ).display(_dispEnergy);
+        while(_flag)
         {
-            _flag = false;
-            std::cout << "  pushed" << std::endl;
+            // check any user input
+            _dispEnergy.wait();
+            // retrieve the input
+            if(_dispEnergy.wheel()!=0)
+            {
+                numPointCur += _dispEnergy.wheel();
+                _dispEnergy.set_wheel();
+            }
+
+            if(_dispEnergy.is_keyARROWDOWN() || _dispEnergy.is_keyARROWLEFT())
+            {
+                --numPointCur;
+            }
+            if(_dispEnergy.is_keyARROWUP() || _dispEnergy.is_keyARROWRIGHT())
+            {
+                ++numPointCur;
+            }
+//            if(_dispEnergy.is_keyF())
+//            {
+//                if(_dispEnergy.is_fullscreen())
+//                {
+//                    _dispEnergy.resize(dispSizeWidth,dispSizeHeight);
+//                }
+//                else
+//                {
+//                    _dispEnergy.resize(dispSizeWidthMax, dispSizeHeightMax);
+//                }
+//                disp.toggle_fullscreen();
+//            }
+            if(_dispEnergy.is_keyQ() || _dispEnergy.is_keyESC())
+            {
+                _flag = false;
+            }
+
+            // update the image
+            else
+            {
+                numPointCur = std::min(_correspondences.width()-1,numPointCur);
+                numPointCur = std::max(numPointCur, -1);
+                if(numPointCur != numPointPrev)
+                {
+                    imgShow = _imagesDispRaw(0);
+                    drawMatching(imgShow, numPointCur).display( _dispEnergy );
+                    numPointPrev = numPointCur;
+                }
+            }
         }
     }
 }
 
 template <typename TI, typename TP>
-cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(const cimg_library::CImg<TI> &_img)
+cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
+    const cimg_library::CImg<TI> &_img
+)
+{
+    return drawMatching(_img, _correspondences.width());
+}
+
+template <typename TI, typename TP>
+cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(
+    const cimg_library::CImg<TI> &_img,
+    const int numDraw
+)
 {
     cimg_library::CImg<TI> img(_img);
     int offset = _imagesRaw(0).width();
     int radius = 4;
     int x0, y0, x1, y1;
     int i0, i1;
-    int numDraw = _correspondences.width();
     for(int m = 0; m <= numDraw; ++m)
     {
         i0 = _correspondences(m,0);
@@ -232,7 +287,8 @@ cimg_library::CImg<TI> MatchingViewer<TI,TP>::drawMatching(const cimg_library::C
             y1 = _points(1)(i1,1);
             draw_line_thick(img, x0, y0, x1, y1, colorLine, radius/2);
             img.draw_circle(x0, y0, radius, colorPt, 1.f);
-            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, colorPt);
+            img.draw_circle(x1, y1, radius, colorPt, 1.f);
+//            img.draw_triangle(x1, y1-radius, x1-radius, y1+radius, x1+radius, y1+radius, colorPt);
         }
     }
 

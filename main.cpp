@@ -275,7 +275,23 @@ int main(int argc, char* argv[])
     std::vector<double> energy(numCorrespondences);
     std::uniform_int_distribution<> rand1(-1, numPoints[1]-1);
     std::uniform_real_distribution<> randE(0.0, 1.0);
-    int numIte = 15;
+    int numIte;
+    numIte = 5;
+    while(--numIte > 0)
+    {
+        std::cout << "ite" << numIte << std::endl;
+        for(int m = 0; m < numCorrespondences; ++m)
+        {
+            correspondences(m,0) = m;
+            correspondences(m,1) = rand1(mt);
+            energy[m] = randE(mt);
+        }
+        view.correspondences(correspondences);
+        view.energy(energy);
+        view.displayUpdate();
+    }
+    numIte = 5;
+    view.flagDebug(true);
     while(--numIte > 0)
     {
         std::cout << "ite" << numIte << std::endl;
